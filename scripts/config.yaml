@@ -1,9 +1,9 @@
-train_path: data/datasets/10000000
-val_path: data/validation
+train_path: data/raw_datasets/100000
+val_path: data/raw_datasets/200
 
-raw_test_path: data/raw_datasets/150
+raw_test_path: data/raw_datasets/200
 test_path: data/validation
-model_path: /local/home/lbiggio/NeuralSymbolicRegressionThatScales/weights/10MCompleted.ckpt  
+model_path: /local/home/lbiggio/NeuralSymbolicRegressionThatScales/weights/10MCompleted.ckpt
 
 wandb: True
 num_of_workers: 28
@@ -11,12 +11,12 @@ batch_size: 25
 epochs: 20
 val_check_interval: 1.0
 precision: 16
-gpu: 8
+gpu: 1
 
 dataset_train:
   total_variables: #Do not fill
   total_coefficients: #Do not fill
-  max_number_of_points: 800  #2000 before
+  max_number_of_points: 800 #2000 before
   type_of_sampling_points: logarithm
   predict_c: True
   fun_support:
@@ -87,8 +87,8 @@ architecture:
   trg_pad_idx: 0
   length_eq: 60
   n_l_enc: 5
-  mean: 0.5  
-  std: 0.5 
+  mean: 0.5
+  std: 0.5
   dim_input: 4
   num_heads: 8
   output_dim: 60
@@ -109,4 +109,4 @@ hydra:
   run:
     dir: run/${dataset_train.predict_c}/${now:%Y-%m-%d}/${now:%H-%M-%S}
   sweep:
-      dir: runs/${dataset_train.predict_c}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: runs/${dataset_train.predict_c}/${now:%Y-%m-%d}/${now:%H-%M-%S}
