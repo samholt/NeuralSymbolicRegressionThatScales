@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
+# Reference : https://github.com/juho-lee/set_transformer/blob/73432c640ac78140496d6738416c54d32c686d65/models.py
+
 class MAB(nn.Module):
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False):
         super(MAB, self).__init__()

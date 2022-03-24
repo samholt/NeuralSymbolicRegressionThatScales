@@ -42,17 +42,22 @@ CLEAR_SYMPY_CACHE_FREQ = 10000
 class NotCorrectIndependentVariables(Exception):
     pass
 
+
 class UnknownSymPyOperator(Exception):
     pass
+
 
 class ValueErrorExpression(Exception):
     pass
 
+
 class ImAccomulationBounds(Exception):
     pass
 
+
 class InvalidPrefixExpression(Exception):
     pass
+
 
 class Generator(object):
     SYMPY_OPERATORS = {
@@ -116,21 +121,22 @@ class Generator(object):
     }
     operators = sorted(list(OPERATORS.keys()))
     constants = ["pi", "E"]
+
     def __init__(self, params):
         self.max_ops = params.max_ops
         self.max_len = params.max_len
         #self.positive = params.positive
 
-
         # parse operators with their weights
-        
+
         ops = params.operators.split(",")
         ops = sorted([x.split(":") for x in ops])
         assert len(ops) >= 1 and all(o in self.OPERATORS for o, _ in ops)
         self.all_ops = [o for o, _ in ops]
         self.una_ops = [o for o, _ in ops if self.OPERATORS[o] == 1]
         self.bin_ops = [o for o, _ in ops if self.OPERATORS[o] == 2]
-        self.all_ops_probs = np.array([float(w) for _, w in ops]).astype(np.float64)
+        self.all_ops_probs = np.array([float(w)
+                                      for _, w in ops]).astype(np.float64)
         self.una_ops_probs = np.array(
             [float(w) for o, w in ops if self.OPERATORS[o] == 1]
         ).astype(np.float64)
@@ -147,23 +153,25 @@ class Generator(object):
 
         # symbols / elements
         self.variables = OrderedDict({})
-        for var in params.variables: 
-            self.variables[str(var)] =sp.Symbol(str(var), real=True, nonzero=True)
+        for var in params.variables:
+            self.variables[str(var)] = sp.Symbol(
+                str(var), real=True, nonzero=True)
         self.var_symbols = list(self.variables)
-        self.pos_dict = {x:idx for idx, x in enumerate(self.var_symbols)}        
+        self.pos_dict = {x: idx for idx, x in enumerate(self.var_symbols)}
         self.placeholders = {}
         self.placeholders["cm"] = sp.Symbol("cm", real=True, nonzero=True)
-        self.placeholders["ca"] = sp.Symbol("ca",real=True, nonzero=True)
+        self.placeholders["ca"] = sp.Symbol("ca", real=True, nonzero=True)
         assert 1 <= len(self.variables)
         # We do not no a priori how many coefficients an expression has, so to be on the same side we equal to two times the maximum number of expressions
-        self.coefficients = [f"{x}_{i}" for x in self.placeholders.keys() for i in range(2*params.max_len)] 
+        self.coefficients = [
+            f"{x}_{i}" for x in self.placeholders.keys() for i in range(2 * params.max_len)]
         assert all(v in self.OPERATORS for v in self.SYMPY_OPERATORS.values())
 
         # SymPy elements
         self.local_dict = {}
         for k, v in list(
             self.variables.items()
-        ):  
+        ):
             assert k not in self.local_dict
             self.local_dict[k] = v
 
@@ -176,13 +184,12 @@ class Generator(object):
                 if x not in ("pow2", "pow3", "pow4", "pow5", "sub", "inv")
             ]
             + digits
-        )  
-
+        )
 
         self.id2word = {i: s for i, s in enumerate(self.words, 4)}
         self.word2id = {s: i for i, s in self.id2word.items()}
         # ADD Start and Finish
-        self.word2id["P"] = 0
+        self.word2id["P"] = 0  # What does P do ?
         self.word2id["S"] = 1
         self.word2id["F"] = 2
         self.id2word[1] = "S"
@@ -212,26 +219,25 @@ class Generator(object):
         # rewrite expressions
         self.rewrite_functions = self.return_rewrite_functions(params)
 
-
     @classmethod
     def return_local_dict(cls, variables=None):
         local_dict = {}
         for k, v in list(
             variables.items()
-        ):  
+        ):
             assert k not in local_dict
             local_dict[k] = v
         return local_dict
 
-
     @classmethod
-    def return_rewrite_functions(cls,params):
-        r =  [
+    def return_rewrite_functions(cls, params):
+        r = [
             x for x in params.rewrite_functions.split(",") if x != ""
         ]
         assert len(r) == len(set(r))
         assert all(
-            x in ["expand", "factor", "expand_log", "logcombine", "powsimp", "simplify"]
+            x in ["expand", "factor", "expand_log",
+                  "logcombine", "powsimp", "simplify"]
             for x in r
         )
         return r
@@ -305,11 +311,13 @@ class Generator(object):
         probs = []
         for i in range(nb_empty):
             probs.append(
-                (self.nl ** i) * self.p1 * self.ubi_dist[nb_empty - i][nb_ops - 1]
+                (self.nl ** i) * self.p1 *
+                self.ubi_dist[nb_empty - i][nb_ops - 1]
             )
         for i in range(nb_empty):
             probs.append(
-                (self.nl ** i) * self.p2 * self.ubi_dist[nb_empty - i + 1][nb_ops - 1]
+                (self.nl ** i) * self.p2 *
+                self.ubi_dist[nb_empty - i + 1][nb_ops - 1]
             )
         probs = [p / self.ubi_dist[nb_empty][nb_ops] for p in probs]
         probs = np.array(probs, dtype=np.float64)
@@ -323,13 +331,13 @@ class Generator(object):
             max_idxs = max([self.pos_dict[x] for x in curr_leaves]) + 1
         else:
             max_idxs = 0
-        return [list(self.variables.keys())[rng.randint(low=0,high=min(max_idxs+1, len(self.variables.keys())))]]
+        return [list(self.variables.keys())[rng.randint(low=0, high=min(max_idxs + 1, len(self.variables.keys())))]]
 
     def _generate_expr(
         self,
         nb_total_ops,
         rng,
-        max_int = 1,
+        max_int=1,
         require_x=False,
         require_y=False,
         require_z=False,
@@ -364,7 +372,7 @@ class Generator(object):
                 stack[:pos]
                 + [op]
                 + [None for _ in range(self.OPERATORS[op])]
-                + stack[pos + 1 :]
+                + stack[pos + 1:]
             )
 
         # sanity check
@@ -381,10 +389,10 @@ class Generator(object):
         # insert leaves into tree
         for pos in range(len(stack) - 1, -1, -1):
             if stack[pos] is None:
-                stack = stack[:pos] + leaves.pop() + stack[pos + 1 :]
+                stack = stack[:pos] + leaves.pop() + stack[pos + 1:]
         assert len(leaves) == 0
         return stack
-    
+
     @classmethod
     def write_infix(cls, token, args):
         """
@@ -476,17 +484,16 @@ class Generator(object):
                 curr["ca"] += 1
         return expr_list
 
-    def return_constants(self,expr_list):
+    def return_constants(self, expr_list):
         #string = "".join(expr_list)
         curr = Counter()
         curr["cm"] = [x for x in expr_list if x[:3] == "cm_"]
         curr["ca"] = [x for x in expr_list if x[:3] == "ca_"]
         return curr
-            
-
 
     # def sign(self, x):
     #     return ("", "-")[x < 0]
+
     @classmethod
     def _prefix_to_infix(cls, expr, coefficients=None, variables=None):
         """
@@ -501,7 +508,8 @@ class Generator(object):
             args = []
             l1 = expr[1:]
             for _ in range(cls.OPERATORS[t]):  # Arity
-                i1, l1 = cls._prefix_to_infix(l1,  coefficients=coefficients, variables=variables)
+                i1, l1 = cls._prefix_to_infix(
+                    l1, coefficients=coefficients, variables=variables)
                 args.append(i1)
             return cls.write_infix(t, args), l1
         elif t in coefficients:
@@ -512,7 +520,7 @@ class Generator(object):
             or t == "I"
         ):
             return t, expr[1:]
-        else: #INT
+        else:  # INT
             val = expr[0]
             return str(val), expr[1:]
 
@@ -529,13 +537,13 @@ class Generator(object):
                 edges.extend(inner_edges)
         return edges, li
 
-
     @classmethod
     def prefix_to_infix(cls, expr, coefficients=None, variables=None):
         """
         Prefix to infix conversion.
         """
-        p, r = cls._prefix_to_infix(expr, coefficients=coefficients, variables=variables)
+        p, r = cls._prefix_to_infix(
+            expr, coefficients=coefficients, variables=variables)
         if len(r) > 0:
             raise InvalidPrefixExpression(
                 f'Incorrect prefix expression "{expr}". "{r}" was not parsed.'
@@ -569,7 +577,8 @@ class Generator(object):
         Convert an infix expression to SymPy.
         """
         try:
-            expr = parse_expr(infix, evaluate=True, local_dict=cls.return_local_dict(variables))
+            expr = parse_expr(infix, evaluate=True,
+                              local_dict=cls.return_local_dict(variables))
         except ValueError:
             raise ImAccomulationBounds
         if expr.has(sp.I) or expr.has(AccumBounds):
@@ -584,7 +593,7 @@ class Generator(object):
         Parse a SymPy expression given an initial root operator.
         """
         n_args = len(expr.args)
-    
+
         assert (
             (op == "add" or op == "mul")
             and (n_args >= 2)
@@ -611,7 +620,7 @@ class Generator(object):
         return parse_list
 
     @classmethod
-    def sympy_to_prefix(cls,expr):
+    def sympy_to_prefix(cls, expr):
         """
         Convert a SymPy expression to a prefix one.
         """
@@ -639,20 +648,21 @@ class Generator(object):
     def process_equation(self, infix):
         f = self.infix_to_sympy(infix, self.variables, self.rewrite_functions)
 
-        
         symbols = set([str(x) for x in f.free_symbols])
         if not symbols:
             raise NotCorrectIndependentVariables()
-            #return None, f"No variables in the expression, skip"
+            # return None, f"No variables in the expression, skip"
         for s in symbols:
             if not len(set(self.var_symbols[:self.pos_dict[s]]) & symbols) == len(self.var_symbols[:self.pos_dict[s]]):
                 raise NotCorrectIndependentVariables()
-                #return None, f"Variable {s} in the expressions, but not the one before"
-        
+                # return None, f"Variable {s} in the expressions, but not the one before"
+
         f = remove_root_constant_terms(f, list(self.variables.values()), 'add')
         f = remove_root_constant_terms(f, list(self.variables.values()), 'mul')
-        f = add_multiplicative_constants(f, self.placeholders["cm"], unary_operators=self.una_ops)
-        f = add_additive_constants(f, self.placeholders, unary_operators=self.una_ops)
+        f = add_multiplicative_constants(
+            f, self.placeholders["cm"], unary_operators=self.una_ops)
+        f = add_additive_constants(
+            f, self.placeholders, unary_operators=self.una_ops)
 
         return f
 
@@ -663,33 +673,25 @@ class Generator(object):
         """
         nb_ops = rng.randint(3, self.max_ops + 1)
         f_expr = self._generate_expr(nb_ops, rng, max_int=1)
-        infix = self.prefix_to_infix(f_expr, coefficients=self.coefficients, variables=self.variables)
+        infix = self.prefix_to_infix(
+            f_expr, coefficients=self.coefficients, variables=self.variables)
         f = self.process_equation(infix)
         f_prefix = self.sympy_to_prefix(f)
         # skip too long sequences
         if len(f_expr) + 2 > self.max_len:
             raise ValueErrorExpression("Sequence longer than max length")
-            #return None, "Sequence longer than max length"
+            # return None, "Sequence longer than max length"
 
         # skip when the number of operators is too far from expected
         real_nb_ops = sum(1 if op in self.OPERATORS else 0 for op in f_expr)
         if real_nb_ops < nb_ops / 2:
             raise ValueErrorExpression("Too many operators")
-            #return None, "Too many operators"
+            # return None, "Too many operators"
 
         if f == "0" or type(f) == str:
             raise ValueErrorExpression("Not a function")
-            #return None, "Not a function"
-        
+            # return None, "Not a function"
+
         sy = f.free_symbols
         variables = set(map(str, sy)) - set(self.placeholders.keys())
         return f_prefix, variables
-
-
-
-   
-
-
-
-
-

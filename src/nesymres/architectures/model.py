@@ -77,15 +77,15 @@ class Model(pl.LightningModule):
         )
         return trg_pad_mask, mask
 
-    def forward(self, batch):
-        b = batch[0].permute(0, 2, 1)
+    def forward(self, batch): # batch(res [equations that are valid, 4 (x's+y), support points], tokens [eqs that are valid, token length], [eq.expr for eq in filtered_eqs - str expression])
+        b = batch[0].permute(0, 2, 1) 
         size = b.shape[-1]
         src_x = b[:, :, : (size - 1)]
         src_y = b[:, :, -1].unsqueeze(2)
-        trg = batch[1].long()
+        trg = batch[1].long() # tokens 
         trg_mask1, trg_mask2 = self.make_trg_mask(trg[:, :-1])
         src_mask = None
-        encoder_input = torch.cat((src_x, src_y), dim=-1)
+        encoder_input = torch.cat((src_x, src_y), dim=-1)  # Why ? - same as b
         enc_src = self.enc(encoder_input)
         assert not torch.isnan(enc_src).any()
         pos = self.pos_embedding(
@@ -113,7 +113,7 @@ class Model(pl.LightningModule):
         return loss
 
     def training_step(self, batch, _):
-        output, trg = self.forward(batch)
+        output, trg = self.forward(batch)  # [21, 9, 60], [9, 22]
         loss = self.compute_loss(output, trg)
         self.log("train_loss", loss, on_epoch=True)
         return loss
