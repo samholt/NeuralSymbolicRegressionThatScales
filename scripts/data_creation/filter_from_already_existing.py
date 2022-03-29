@@ -16,6 +16,9 @@ import os
 #import pickle
 import warnings
 from sympy import lambdify, sympify
+from sympy import *
+# from math import asin
+# from numpy import arcsin as asin
 
 
 def evaluate_validation_set(validation_eqs: pd.DataFrame, support) -> set:
@@ -25,7 +28,9 @@ def evaluate_validation_set(validation_eqs: pd.DataFrame, support) -> set:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             variables = [f"x_{i}" for i in range(1, 1 + support.shape[0])]
-            curr = lambdify(variables, row["eq"], modules=[{'asin': np.arcsin}, 'numpy', 'sympy'])(
+            # curr = lambdify(variables, row["eq"], modules=[{'asin': np.arcsin}, 'numpy'])(
+            #     *support).numpy().astype('float16')
+            curr = lambdify(variables, row["eq"])(
                 *support).numpy().astype('float16')
             curr = tuple([x if not np.isnan(x) else "nan" for x in curr])
             res.add(curr)
@@ -129,8 +134,10 @@ def main(data_path, csv_path, debug):
         res = list(
             map(pipe.is_valid_and_not_in_validation_set, tqdm(range(total_eq))))
 
-    print(f"Total number of good equations {len([x for x in p if x[1]])}")
     np.save(os.path.join(data_path, "filtered"), res)
+    print('Pool ', p)
+    print('Pool ', type(p))
+    print(f"Total number of good equations {len([x for x in p if x[1]])}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import torch
 
+
 def generate_beam(env, dec, decoder_args, beam_size, length_penalty, early_stopping, max_len=100):
     """
     Decode a sentence given initial start.
@@ -17,7 +18,7 @@ def generate_beam(env, dec, decoder_args, beam_size, length_penalty, early_stopp
     # check inputs
     trg, enc_src, trg_mask, src_mask = decoder_args
     src_enc = enc_src
-    src_len = enc_src 
+    src_len = enc_src
 
     #assert src_enc.size(0) == src_len.size(0)
     assert beam_size >= 1
@@ -28,16 +29,18 @@ def generate_beam(env, dec, decoder_args, beam_size, length_penalty, early_stopp
     breakpoint()
 
     # expand to beam size the source latent representations / source lengths
-    src_enc = src_enc.unsqueeze(1).expand((bs, beam_size) + src_enc.shape[1:]).contiguous().view((bs * beam_size,) + src_enc.shape[1:])
+    src_enc = src_enc.unsqueeze(1).expand(
+        (bs, beam_size) + src_enc.shape[1:]).contiguous().view((bs * beam_size,) + src_enc.shape[1:])
     #src_len = src_len.unsqueeze(1).expand(bs, beam_size).contiguous().view(-1)
 
     # generated sentences (batch with beam current hypotheses)
-    #generated = src_len.new(max_len, bs * beam_size)  # upcoming output
-    #generated.fill_(env.pad_index)                   # fill upcoming ouput with <PAD>
-    #generated[0].fill_(env.eos_index)                # we use <EOS> for <BOS> everywhere
+    # generated = src_len.new(max_len, bs * beam_size)  # upcoming output
+    # generated.fill_(env.pad_index)                   # fill upcoming ouput with <PAD>
+    # generated[0].fill_(env.eos_index)                # we use <EOS> for <BOS> everywhere
 
     # generated hypotheses
-    generated_hyps = [BeamHypotheses(beam_size, max_len, length_penalty, early_stopping) for _ in range(bs)]
+    generated_hyps = [BeamHypotheses(
+        beam_size, max_len, length_penalty, early_stopping) for _ in range(bs)]
 
     # positions
     positions = src_len.new(max_len).long()
@@ -58,7 +61,7 @@ def generate_beam(env, dec, decoder_args, beam_size, length_penalty, early_stopp
     done = [False for _ in range(bs)]
     breakpoint()
     while cur_len < max_len:
-        dec(trg[:,:-1], enc_src, trg_mask, src_mask)
+        dec(trg[:, :-1], enc_src, trg_mask, src_mask)
         # compute word scores
         tensor = decoder(
             x=generated[:cur_len],
@@ -76,10 +79,13 @@ def generate_beam(env, dec, decoder_args, beam_size, length_penalty, early_stopp
         assert scores.size() == (bs * beam_size, n_words)
 
         # select next words with scores
-        _scores = scores + beam_scores[:, None].expand_as(scores)  # (bs * beam_size, n_words)
-        _scores = _scores.view(bs, beam_size * n_words)            # (bs, beam_size * n_words)
+        # (bs * beam_size, n_words)
+        _scores = scores + beam_scores[:, None].expand_as(scores)
+        # (bs, beam_size * n_words)
+        _scores = _scores.view(bs, beam_size * n_words)
 
-        next_scores, next_words = torch.topk(_scores, 2 * beam_size, dim=1, largest=True, sorted=True)
+        next_scores, next_words = torch.topk(
+            _scores, 2 * beam_size, dim=1, largest=True, sorted=True)
         assert next_scores.size() == next_words.size() == (bs, 2 * beam_size)
 
         # next batch beam content
@@ -90,9 +96,11 @@ def generate_beam(env, dec, decoder_args, beam_size, length_penalty, early_stopp
         for sent_id in range(bs):
 
             # if we are done with this sentence
-            done[sent_id] = done[sent_id] or generated_hyps[sent_id].is_done(next_scores[sent_id].max().item())
+            done[sent_id] = done[sent_id] or generated_hyps[sent_id].is_done(
+                next_scores[sent_id].max().item())
             if done[sent_id]:
-                next_batch_beam.extend([(0, env.pad_index, 0)] * beam_size)  # pad the batch
+                next_batch_beam.extend(
+                    [(0, env.pad_index, 0)] * beam_size)  # pad the batch
                 continue
 
             # next sentence beam content
@@ -107,18 +115,22 @@ def generate_beam(env, dec, decoder_args, beam_size, length_penalty, early_stopp
 
                 # end of sentence, or next word
                 if word_id == env.eos_index or cur_len + 1 == max_len:
-                    generated_hyps[sent_id].add(generated[:cur_len, sent_id * beam_size + beam_id].clone().cpu(), value.item())
+                    generated_hyps[sent_id].add(
+                        generated[:cur_len, sent_id * beam_size + beam_id].clone().cpu(), value.item())
                 else:
-                    next_sent_beam.append((value, word_id, sent_id * beam_size + beam_id))
+                    next_sent_beam.append(
+                        (value, word_id, sent_id * beam_size + beam_id))
 
                 # the beam for next step is full
                 if len(next_sent_beam) == beam_size:
                     break
 
             # update next beam content
-            assert len(next_sent_beam) == 0 if cur_len + 1 == max_len else beam_size
+            assert len(next_sent_beam) == 0 if cur_len + \
+                1 == max_len else beam_size
             if len(next_sent_beam) == 0:
-                next_sent_beam = [(0, env.pad_index, 0)] * beam_size  # pad the batch
+                next_sent_beam = [(0, env.pad_index, 0)] * \
+                    beam_size  # pad the batch
             next_batch_beam.extend(next_sent_beam)
             assert len(next_batch_beam) == beam_size * (sent_id + 1)
 
@@ -180,7 +192,12 @@ def generate_beam(env, dec, decoder_args, beam_size, length_penalty, early_stopp
 
     return decoded, tgt_len, generated_hyps
 
+
 class BeamHypotheses(object):
+
+    # https://code.ihub.org.cn/projects/763/repository/commit_diff?changeset=7e3070ae4f0a1f57a974de9b2b54fd7ad3f08fce
+    # https://github.com/huggingface/transformers
+    # https://github.com/huggingface/transformers/blob/4975002df50c472cbb6f8ac3580e475f570606ab/src/transformers/generation_beam_search.py#L808
 
     def __init__(self, n_hyp, max_len, length_penalty, early_stopping):
         """
@@ -207,7 +224,8 @@ class BeamHypotheses(object):
         if len(self) < self.n_hyp or score > self.worst_score:
             self.hyp.append((score, hyp))
             if len(self) > self.n_hyp:
-                sorted_scores = sorted([(s, idx) for idx, (s, _) in enumerate(self.hyp)])
+                sorted_scores = sorted([(s, idx)
+                                       for idx, (s, _) in enumerate(self.hyp)])
                 del self.hyp[sorted_scores[0][1]]
                 self.worst_score = sorted_scores[1][0]
             else:

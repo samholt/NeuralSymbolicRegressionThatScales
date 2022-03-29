@@ -1,4 +1,4 @@
-train_path: data/raw_datasets/100000
+train_path: data/datasets/100000
 val_path: data/raw_datasets/200
 
 raw_test_path: data/raw_datasets/200

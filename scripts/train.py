@@ -48,7 +48,7 @@ def main(cfg):
     )
 
     trainer = pl.Trainer(
-        strategy="ddp",
+        distributed_backend="ddp",
         gpus=cfg.gpu,
         max_epochs=cfg.epochs,
         # val_check_interval=cfg.val_check_interval,

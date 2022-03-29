@@ -77,12 +77,13 @@ class Model(pl.LightningModule):
         )
         return trg_pad_mask, mask
 
-    def forward(self, batch): # batch(res [equations that are valid, 4 (x's+y), support points], tokens [eqs that are valid, token length], [eq.expr for eq in filtered_eqs - str expression])
-        b = batch[0].permute(0, 2, 1) 
+    # batch(res [equations that are valid, 4 (x's+y), support points], tokens [eqs that are valid, token length], [eq.expr for eq in filtered_eqs - str expression])
+    def forward(self, batch):
+        b = batch[0].permute(0, 2, 1)
         size = b.shape[-1]
         src_x = b[:, :, : (size - 1)]
         src_y = b[:, :, -1].unsqueeze(2)
-        trg = batch[1].long() # tokens 
+        trg = batch[1].long()  # tokens
         trg_mask1, trg_mask2 = self.make_trg_mask(trg[:, :-1])
         src_mask = None
         encoder_input = torch.cat((src_x, src_y), dim=-1)  # Why ? - same as b
@@ -194,8 +195,8 @@ class Model(pl.LightningModule):
                 trg_ = self.dropout(te + pos)
 
                 output = self.decoder_transfomer(
-                    trg_.permute(1, 0, 2),
-                    enc_src.permute(1, 0, 2),
+                    trg_.permute(1, 0, 2),  # Target
+                    enc_src.permute(1, 0, 2),  # Memory
                     generated_mask2.float(),
                     tgt_key_padding_mask=generated_mask1.bool(),
                 )
@@ -227,7 +228,7 @@ class Model(pl.LightningModule):
                 for idx, value in zip(next_words, next_scores):
 
                     # get beam and word IDs
-                    beam_id = idx // n_words
+                    beam_id = idx // n_words # https://github.com/huggingface/transformers/blob/088c1880b7bfd47777778d0d0fcc20e921bcf21e/src/transformers/generation_tf_utils.py#L1062
                     word_id = idx % n_words
 
                     # end of sentence, or next word
@@ -276,7 +277,7 @@ class Model(pl.LightningModule):
                 beam_idx = torch.tensor(
                     [x[2] for x in next_sent_beam], device=self.device
                 )
-                generated = generated[beam_idx, :]
+                generated = generated[beam_idx, :]  # Extend here !
                 generated[:, cur_len] = beam_words
                 for k in cache.keys():
                     if k != "slen":
