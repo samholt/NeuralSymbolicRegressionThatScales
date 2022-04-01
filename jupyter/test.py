@@ -76,8 +76,8 @@ min_supp = cfg.dataset_train.fun_support["min"]
 X = torch.rand(number_of_points, len(
     list(eq_setting["total_variables"]))) * (max_supp - min_supp) + min_supp
 X[:, n_variables:] = 0
-# target_eq = "x_1*sin(x_1)" #Use x_1,x_2 and x_3 as independent variables
-target_eq = "sin(x_1**2)*cos(x_1)-1"
+target_eq = "x_1*sin(x_1)" #Use x_1,x_2 and x_3 as independent variables
+# target_eq = "sin(x_1**2)*cos(x_1)-1"
 X_dict = {x: X[:, idx].cpu()
           for idx, x in enumerate(eq_setting["total_variables"])}
 y = lambdify(",".join(eq_setting["total_variables"]), target_eq)(**X_dict)

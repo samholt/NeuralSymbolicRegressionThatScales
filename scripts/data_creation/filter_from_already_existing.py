@@ -78,6 +78,7 @@ class Pipeline:
         # For avoiding missing numerical equivalences we convert all nan to string
         curr = [x if not np.isnan(x) else "nan" for x in y]
         # y = evaluate_fun(args)
+        # print('curr:', curr)
         val = tuple(curr)
         if val == tuple([]):
             # Not an equation
@@ -137,7 +138,8 @@ def main(data_path, csv_path, debug):
     np.save(os.path.join(data_path, "filtered"), res)
     print('Pool ', p)
     print('Pool ', type(p))
-    print(f"Total number of good equations {len([x for x in p if x[1]])}")
+    # print(f"Total number of good equations {len([x for x in p if x[1]])}")
+    print(f"Total number of good equations {len([x for x in res if x[1]])}")
 
 
 if __name__ == "__main__":

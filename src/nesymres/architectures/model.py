@@ -84,7 +84,7 @@ class Model(pl.LightningModule):
         src_x = b[:, :, : (size - 1)]
         src_y = b[:, :, -1].unsqueeze(2)
         trg = batch[1].long()  # tokens
-        trg_mask1, trg_mask2 = self.make_trg_mask(trg[:, :-1])
+        trg_mask1, trg_mask2 = self.make_trg_mask(trg[:, :-1]) # trg_pad_mask, mask
         src_mask = None
         encoder_input = torch.cat((src_x, src_y), dim=-1)  # Why ? - same as b
         enc_src = self.enc(encoder_input)
@@ -103,7 +103,7 @@ class Model(pl.LightningModule):
             trg_mask2.bool(),
             tgt_key_padding_mask=trg_mask1.bool(),
         )
-        output = self.fc_out(output)
+        output = self.fc_out(output) # (seq_len, bs, vocab_size)
         return output, trg
 
     def compute_loss(self, output, trg):
@@ -277,7 +277,7 @@ class Model(pl.LightningModule):
                 beam_idx = torch.tensor(
                     [x[2] for x in next_sent_beam], device=self.device
                 )
-                generated = generated[beam_idx, :]  # Extend here !
+                generated = generated[beam_idx, :]  # Extend here ! - overwrite previous 2 beams with best beam now found
                 generated[:, cur_len] = beam_words
                 for k in cache.keys():
                     if k != "slen":
