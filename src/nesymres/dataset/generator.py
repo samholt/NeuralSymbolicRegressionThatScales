@@ -189,7 +189,7 @@ class Generator(object):
         self.id2word = {i: s for i, s in enumerate(self.words, 4)}
         self.word2id = {s: i for i, s in self.id2word.items()}
         # ADD Start and Finish
-        self.word2id["P"] = 0  # What does P do ?
+        self.word2id["P"] = 0  # What does P do ? - padding
         self.word2id["S"] = 1
         self.word2id["F"] = 2
         self.id2word[1] = "S"
