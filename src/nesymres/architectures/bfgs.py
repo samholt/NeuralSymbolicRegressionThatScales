@@ -166,5 +166,5 @@ def bfgs(pred_str, X, y, cfg):
     except ValueError:
         print("All-Nan slice encountered")
         k_best = 0
-    return funcs[k_best], consts_[k_best], F_loss[k_best], expr
+    return funcs[k_best], consts_[k_best], F_loss[k_best], expr, raw
             

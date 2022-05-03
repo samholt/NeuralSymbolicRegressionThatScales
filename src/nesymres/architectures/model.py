@@ -300,15 +300,29 @@ class Model(pl.LightningModule):
             #flag = 0
             L_bfgs = []
             P_bfgs = []
+            prefixs = []
             #counter = 1
 
             #fun_args = ",".join(chain(cfg_params.total_variables,"constant"))
             cfg_params.id2word[3] = "constant"
+            #pred_str = [x if x<14 else x+1 for x in pred_str]
+            from . import data
+            prefixes = []
             for __, ww in sorted(
                 generated_hyps.hyp, key=lambda x: x[0], reverse=True
             ):
                 try:
-                    pred_w_c, constants, loss_bfgs, exa = bfgs.bfgs(
+                    raw = data.de_tokenize(ww[1:].tolist(), cfg_params.id2word)
+                    prefixes.append(raw)
+                except Exception as e:
+                    print(f'Error {e}')
+                    continue
+            return prefixes
+            for __, ww in sorted(
+                generated_hyps.hyp, key=lambda x: x[0], reverse=True
+            ):
+                try:
+                    pred_w_c, constants, loss_bfgs, exa, prefix = bfgs.bfgs(
                         ww, X, y, cfg_params
                     )
                 except InvalidPrefixExpression:
@@ -316,6 +330,7 @@ class Model(pl.LightningModule):
                 #L_bfgs = loss_bfgs
                 P_bfgs.append(str(pred_w_c))
                 L_bfgs.append(loss_bfgs)
+                prefixs.append(prefix)
 
             if all(np.isnan(np.array(L_bfgs))):
                 print("Warning all nans")
@@ -326,7 +341,7 @@ class Model(pl.LightningModule):
                 best_L_bfgs.append(np.nanmin(L_bfgs))
 
             output = {'all_bfgs_preds': P_bfgs, 'all_bfgs_loss': L_bfgs,
-                      'best_bfgs_preds': best_preds_bfgs, 'best_bfgs_loss': best_L_bfgs}
+                      'best_bfgs_preds': best_preds_bfgs, 'best_bfgs_loss': best_L_bfgs, 'prefixs': prefixs}
             self.eq = output['best_bfgs_preds']
             return output
 
